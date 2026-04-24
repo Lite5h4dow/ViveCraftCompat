@@ -8,20 +8,36 @@
   ],
   "client": [
 	  "compat.jade.JadeClientPlatformProxyMixin",
-	  
+
 	  "compat.journeymap.JMNeoForgeHudOverlayEventsMixin",
 	  "compat.journeymap.JMEffectMixin",
-	  
+
 	  "compat.theoneprobe.ClientSetupMixin",
-	  
+
+	  "compat.aeronautics.AeronauticsLevititeCatalyzerHandlerMixin",
+
+	  "compat.create.CreateAllKeysMixin",
 	  "compat.create.CreateBigOutlinesMixin",
 	  "compat.create.CreateTrackBlockOutlineMixin",
 	  "compat.create.CreateRaycastHelperMixin",
 	  "compat.create.CreateValueSettingsScreenMixin",
 	  "compat.create.CreateContraptionControlsMovingInteractionMixin",
-	  
+
+	  "compat.simulated.SimulatedPhysicsStaffClientHandlerMixin",
+	  "compat.simulated.SimulatedPhysicsStaffItemRendererMixin",
+	  "compat.simulated.SimulatedPhysicsStaffRenderHandlerMixin",
+	  "compat.simulated.SimulatedGameRendererMixin",
+	  "compat.simulated.SimulatedThrottleLeverGameRendererMixin",
+	  "compat.simulated.SimulatedUseOnContextMixin",
+	  "compat.simulated.SimulatedBlockPlaceContextMixin",
+	  "compat.simulated.SimulatedSteeringWheelHandlerMixin",
+	  "compat.simulated.SimulatedSteeringWheelBlockMixin",
+
 	  "MinecraftMixin",
+	  "MinecraftKeyboardHandlerMixin",
 	  "MinecraftMixin_OverlayRender",
+	  "TeleportTrackerMixin",
+	  "VRDataDevicePoseMixin",
 	  "VRRendererMixin",
 	  "VREffectsHelperMixin",
 	  "MCVRMixin",

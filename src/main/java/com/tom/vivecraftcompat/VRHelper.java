@@ -17,10 +17,18 @@ public class VRHelper {
 	}
 
 	public static Vec3 getRayOrigin() {
-		return DATA_HOLDER.vrPlayer.vrdata_world_render.getController(0).getPosition();
+		return getControllerRayOrigin(0);
 	}
 
 	public static Vector3f getRayDirection() {
-		return DATA_HOLDER.vrPlayer.vrdata_world_render.getController(0).getDirection();
+		return getControllerRayDirection(0);
+	}
+
+	public static Vec3 getControllerRayOrigin(int controller) {
+		return DATA_HOLDER.vrPlayer.vrdata_world_render.getController(controller).getPosition();
+	}
+
+	public static Vector3f getControllerRayDirection(int controller) {
+		return DATA_HOLDER.vrPlayer.vrdata_world_render.getController(controller).getDirection();
 	}
 }

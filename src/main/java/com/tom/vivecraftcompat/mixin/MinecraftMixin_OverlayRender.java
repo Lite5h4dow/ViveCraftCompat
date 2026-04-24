@@ -11,12 +11,19 @@ import net.minecraft.client.DeltaTracker.Timer;
 import net.minecraft.client.Minecraft;
 
 import com.tom.vivecraftcompat.overlay.OverlayManager;
+import com.tom.vivecraftcompat.simulated.SableVRBridge;
 
 @Mixin(value = Minecraft.class, priority = 500)
 public class MinecraftMixin_OverlayRender {
 	@Shadow
 	@Final
 	private Timer timer;
+
+	@Inject(at = @At(value = "INVOKE", target = "Lnet/neoforged/neoforge/client/ClientHooks;fireRenderFramePre(Lnet/minecraft/client/DeltaTracker;)V", shift = At.Shift.BEFORE), method = "runTick")
+	public void syncPhysicsSeatBeforeRender(boolean renderLevel, CallbackInfo ci) {
+		if (renderLevel)
+			SableVRBridge.syncSeatedPhysicsRotationFrame();
+	}
 
 	@Inject(at = @At(value = "INVOKE", target = "Lnet/neoforged/neoforge/client/ClientHooks;fireRenderFramePost(Lnet/minecraft/client/DeltaTracker;)V", shift = At.Shift.AFTER), method = "runTick")
 	public void renderOverlayPasses(boolean renderLevel, CallbackInfo ci) {

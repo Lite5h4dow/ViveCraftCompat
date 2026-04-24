@@ -23,6 +23,10 @@ import com.tom.vivecraftcompat.overlay.OverlayConfig;
 import com.tom.vivecraftcompat.overlay.OverlayManager;
 import com.tom.vivecraftcompat.overlay.OverlayManager.Layer;
 import com.tom.vivecraftcompat.overlay.OverlaySettingsGui;
+import com.tom.vivecraftcompat.create.CreateSeatVRBridge;
+import com.tom.vivecraftcompat.create.CreateSchematicVRInputBridge;
+import com.tom.vivecraftcompat.simulated.SableVRBridge;
+import com.tom.vivecraftcompat.simulated.SimulatedVRInputBridge;
 
 public class Client {
 	public static ModConfigFile config;
@@ -35,6 +39,10 @@ public class Client {
 
 		config = new ModConfigFile(new File(FMLPaths.CONFIGDIR.get().toFile(), "vivecraftcompat.json"));
 		OverlayConfig.loadOverlays();
+		CreateSeatVRBridge.init();
+		CreateSchematicVRInputBridge.init();
+		SableVRBridge.init();
+		SimulatedVRInputBridge.init();
 	}
 
 	@SubscribeEvent

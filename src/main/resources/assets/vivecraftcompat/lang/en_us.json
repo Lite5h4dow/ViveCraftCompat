@@ -2,6 +2,7 @@
 	"vivecraftcompat.gui.overlays": "HUD Overlays",
 	"vivecraftcompat.gui.overlay.create": "[Create New]",
 	"vivecraftcompat.gui.overlay.name": "Overlay %d",
+	"vivecraftcompat.gui.overlay.copy_name": "%s Copy",
 	"vivecraftcompat.gui.overlay.lock": "Lock overlay to:",
 	"vivecraftcompat.gui.overlay.lock.float": "Float (No Lock)",
 	"vivecraftcompat.gui.overlay.lock.hmd": "HMD",
@@ -29,6 +30,7 @@
 	
 	"tooltip.vivecraftcompat.overlay.moveL": "Move overlay with the Left Controller\\Press %s to stop moving",
 	"tooltip.vivecraftcompat.overlay.moveR": "Move overlay with the Right Controller\\Press %s to stop moving",
+	"tooltip.vivecraftcompat.overlay.copy": "Copy selected overlay",
 	"tooltip.vivecraftcompat.overlay.edit": "Edit raw overlay position and rotation",
 	
 	"overlay.vivecraftcompat.jade": "Jade (Compatibility Mode)",

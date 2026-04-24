@@ -10,4 +10,8 @@ public class VRMode {
 	public static boolean isVRStanding() {
 		return isVR() && VRHelper.isStanding();
 	}
+
+	public static boolean isVRHandAiming() {
+		return isVR();
+	}
 }

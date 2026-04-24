@@ -54,7 +54,7 @@ public class OverlaySettingsGui extends Frame {
 	private NameMapper<OverlayLock> overlayLockNames;
 	private DropDownBox<NamedElement<OverlayEnable>> overlayEnableBox;
 	private NameMapper<OverlayEnable> overlayEnableNames;
-	private Button btnAdd, btnDel;
+	private Button btnAdd, btnDel, btnCopy;
 	private Set<ResourceLocation> allElements;
 	private Slider sliderScale;
 	private List<BooleanConsumer> moveUpdater = new ArrayList<>();
@@ -81,6 +81,7 @@ public class OverlaySettingsGui extends Frame {
 				allElements.removeAll(h.overlays);
 			}
 		});
+		rebuildAvailableElements();
 
 		int w = width;
 		int h = height - 20;
@@ -117,6 +118,11 @@ public class OverlaySettingsGui extends Frame {
 		btnDel = new Button(gui, "-", ConfirmPopup.confirmHandler(this, gui.i18nFormat("vivecraftcompat.gui.overlay.delete"), this::deleteOverlay));
 		btnDel.setBounds(new Box(rx2, 30, 20, 20));
 		p.addElement(btnDel);
+
+		btnCopy = new Button(gui, "C", this::copyOverlay);
+		btnCopy.setTooltip(new Tooltip(this, gui.i18nFormat("tooltip.vivecraftcompat.overlay.copy")));
+		btnCopy.setBounds(new Box(rx2, 55, 20, 20));
+		p.addElement(btnCopy);
 
 		elementNames = new NameMapper<>(allElements, rl -> gui.i18nFormat(rl.toLanguageKey("overlay")));
 		elementsBox = new ListPicker<>(gui.getFrame(), elementNames.asList());
@@ -402,18 +408,41 @@ public class OverlaySettingsGui extends Frame {
 			}
 			ResourceLocation select = elementsBox.getSelected().getElem();
 			ov.overlays.add(select);
-			allElements.remove(select);
-			elementNames.refreshValues();
+			rebuildAvailableElements();
 			elementsBox.setSelected(null);
 			updateCurrentElementsList();
 		}
 	}
 
+	private void copyOverlay() {
+		if (overlaysBox.getSelected() == null || overlaysBox.getSelected().overlay == null)
+			return;
+
+		HudOverlayScreen source = overlaysBox.getSelected().overlay;
+		HudOverlayScreen copy = new HudOverlayScreen(UUID.randomUUID().toString());
+		copy.setName(gui.i18nFormat("vivecraftcompat.gui.overlay.copy_name", source.getName()));
+		copy.enable = source.enable;
+		copy.overlays.addAll(source.overlays);
+
+		Layer layer = new Layer(copy);
+		copy.layer = layer;
+		layer.setScale(source.layer.getScale());
+		layer.setLockDirect(source.layer.getLock());
+		layer.setPos(new Vector3f(source.layer.getPosRaw()));
+		layer.setRotation(new Matrix4f(source.layer.getRotationRaw()));
+
+		OverlayElement element = new OverlayElement(copy);
+		overlays.add(element);
+		overlaysBox.setSelected(element);
+		OverlayManager.addLayer(layer);
+		rebuildAvailableElements();
+		updateCurrentElementsList();
+		updateOutlines(copy);
+	}
+
 	private void deleteOverlay() {
 		if (overlaysBox.getSelected() != null && overlaysBox.getSelected().overlay != null) {
 			HudOverlayScreen s = overlaysBox.getSelected().overlay;
-			allElements.addAll(s.overlays);
-			elementNames.refreshValues();
 
 			currentElements.getElements().clear();
 			currentElementsScp.setScrollY(0);
@@ -421,9 +450,21 @@ public class OverlaySettingsGui extends Frame {
 			overlaysBox.setSelected(overlays.get(0));
 			overlays.removeIf(h -> h.overlay == s);
 			s.layer.remove();
+			rebuildAvailableElements();
 
 			btnDel.setEnabled(false);
 		}
+	}
+
+	private void rebuildAvailableElements() {
+		allElements.clear();
+		allElements.addAll(OverlayAccess.getLayers().stream().map(NamedLayer::name).collect(Collectors.toSet()));
+		overlays.forEach(element -> {
+			if (element.overlay != null)
+				allElements.removeAll(element.overlay.overlays);
+		});
+		if (elementNames != null)
+			elementNames.refreshValues();
 	}
 
 	private void updateOutlines(HudOverlayScreen ov) {
@@ -440,6 +481,7 @@ public class OverlaySettingsGui extends Frame {
 		currentElementsScp.setScrollY(0);
 		boolean en = overlaysBox.getSelected() != null && overlaysBox.getSelected().overlay != null;
 		btnDel.setEnabled(en);
+		btnCopy.setEnabled(en);
 		sliderScale.setEnabled(en);
 		overlayLockBox.setEnabled(en);
 		overlayEnableBox.setEnabled(en);
@@ -462,8 +504,7 @@ public class OverlaySettingsGui extends Frame {
 
 				Button del = new Button(gui, "-", () -> {
 					s.overlays.remove(l);
-					allElements.add(l);
-					elementNames.refreshValues();
+					rebuildAvailableElements();
 					currentElements.getElements().remove(pn);
 					currentElementsLayout.reflow();
 				});

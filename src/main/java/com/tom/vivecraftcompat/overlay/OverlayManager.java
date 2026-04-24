@@ -57,7 +57,10 @@ public class OverlayManager {
 		MC mc = (MC) minecraft;
 		RenderTarget bak = minecraft.getMainRenderTarget();
 		overlayRendering = true;
-		for (Layer layer : screens) {
+		for (Layer layer : new ArrayList<>(screens)) {
+			if (!screens.contains(layer))
+				continue;
+
 			layer.initialize();
 			if (layer.framebuffer == null)
 				continue;//??
@@ -374,6 +377,7 @@ public class OverlayManager {
 		}
 		if(KeyboardHandler.SHOWING)return;
 		forEachLayer(s -> {
+			if(!s.ready())return;
 			if(s.screen instanceof VRInteractableScreen i)
 				i.processBindings();
 		});

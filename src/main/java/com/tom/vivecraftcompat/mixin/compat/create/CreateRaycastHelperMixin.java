@@ -19,7 +19,7 @@ public class CreateRaycastHelperMixin {
 
 	@Inject(at = @At("HEAD"), method = "getTraceTarget", cancellable = true, remap = false)
 	private static void onGetTraceTarget(Player playerIn, double range, Vec3 origin, CallbackInfoReturnable<Vec3> cbi) {
-		if (playerIn.level().isClientSide && VRMode.isVRStanding()) {
+		if (playerIn.level().isClientSide && VRMode.isVRHandAiming()) {
 			Vector3f d = VRHelper.getRayDirection();
 			cbi.setReturnValue(origin.add(d.x * range, d.y * range, d.z * range));
 		}

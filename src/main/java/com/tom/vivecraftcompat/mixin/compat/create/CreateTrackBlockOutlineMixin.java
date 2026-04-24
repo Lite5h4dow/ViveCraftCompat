@@ -16,7 +16,7 @@ public class CreateTrackBlockOutlineMixin {
 
 	@ModifyVariable(at = @At("STORE"), method = "pickCurves()V", remap = false, ordinal = 0)
 	private static Vec3 vrOrigin(Vec3 original) {
-		if (VRMode.isVRStanding())
+		if (VRMode.isVRHandAiming())
 			return VRHelper.getRayOrigin();
 		return original;
 	}

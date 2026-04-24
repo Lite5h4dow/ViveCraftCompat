@@ -60,6 +60,11 @@ public class FloatingGui extends GuiImpl implements VRInteractableScreen {
 	public void processGui() {
 		//PointedL = false;
 		PointedR = false;
+		if (minecraft == null || minecraft.getWindow() == null || clickBounds == null) {
+			cursorX2 = -1.0F;
+			cursorY2 = -1.0F;
+			return;
+		}
 
 		if (!OverlayManager.dh.vrSettings.seated) {
 			Vector3f pos = layer.getPos();
@@ -126,6 +131,14 @@ public class FloatingGui extends GuiImpl implements VRInteractableScreen {
 
 	@Override
 	public void processBindings() {
+		if (minecraft == null || minecraft.options == null || minecraft.getWindow() == null) {
+			if (lastPressedShift) {
+				setShift(false);
+				lastPressedShift = false;
+			}
+			return;
+		}
+
 		if (PointedR && minecraft.options.keyShift.consumeClick()) {
 			setShift(true);
 			lastPressedShift = true;
