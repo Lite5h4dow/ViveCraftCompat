@@ -12,6 +12,7 @@ steps:
       - mkdir -p /crow/gradle
       - ./gradlew build -s
       - mkdir -p /crow/build
+      - ls ./build
       - cp ./build/libs/vivecraftcompat-1.21-$CI_COMMIT_TAG.jar /crow/build/
 
   - name: release
