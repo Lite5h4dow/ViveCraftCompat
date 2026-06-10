@@ -5,7 +5,7 @@ when:
 
 steps:
   - name: build
-    image: alpine
+    image: amazoncorretto:21-alpine
     environment:
       GRADLE_USER_HOME: /crow/gradle
     commands:
