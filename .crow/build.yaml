@@ -20,7 +20,7 @@ steps:
       - build
     image: codeberg.org/woodpecker-plugins/release:latest
     settings:
-      title: $CI_COMMIT_TAG
+      title: ${CI_COMMIT_TAG}
       api-key:
         from_secret: github-release-key
       files:
