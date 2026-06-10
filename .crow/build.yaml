@@ -5,7 +5,7 @@ when:
 
 steps:
   - name: build
-    image: gradle:jdk21-corretto-alpine
+    image: gradle:jdk21-corretto
     commands:
       - gradle build
       - mkdir -p /crow/build
@@ -14,7 +14,7 @@ steps:
   - name: release
     depends_on:
       - build
-    image: woodpeckerci/plugin-release
+    image: codeberg.org/woodpecker-plugins/release:latest
     settings:
       title: $CI_COMMIT_TAG
       api-key:
