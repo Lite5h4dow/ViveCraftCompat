@@ -10,7 +10,7 @@ steps:
       GRADLE_USER_HOME: /crow/gradle
     commands:
       - mkdir -p /crow/gradle
-      - gradle build
+      - gradle build -s
       - mkdir -p /crow/build
       - cp ./build/libs/vivecraftcompat-1.21-$CI_COMMIT_TAG.jar /crow/build/
 
