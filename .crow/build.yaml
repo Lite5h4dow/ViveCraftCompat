@@ -6,7 +6,10 @@ when:
 steps:
   - name: build
     image: gradle:jdk21-corretto
+    environment:
+      GRADLE_USER_HOME: /crow/gradle
     commands:
+      - mkdir -p /crow/gradle
       - gradle build
       - mkdir -p /crow/build
       - cp ./build/libs/vivecraftcompat-1.21-$CI_COMMIT_TAG.jar /crow/build/
