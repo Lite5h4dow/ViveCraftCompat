@@ -2,7 +2,7 @@ when:
   - event:
     - tag
     - manual
-    
+
 steps:
   - name: build
     image: gradle:jdk21-corretto-alpine
@@ -16,6 +16,7 @@ steps:
       - build
     image: woodpeckerci/plugin-release
     settings:
+      title: $CI_COMMIT_TAG
       api-key:
         from_secret: github-release-key
       files:
