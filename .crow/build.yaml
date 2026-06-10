@@ -1,0 +1,24 @@
+steps:
+  - name: build
+    when:
+      - event:
+        - tag
+        - manual
+    image: gradle:jdk21-corretto-alpine
+    commands:
+      - gradle build
+      - mkdir -p /crow/build
+      - cp ./build/libs/vivecraftcompat-1.21-$CI_COMMIT_TAG.jar /crow/build/
+
+  - name: release
+    depends_on:
+      - build
+    image: woodpeckerci/plugin-release
+    settings:
+      api-key:
+        from_secret: github_release_key
+      files:
+        - /crow/build/*.jar
+
+      
+
