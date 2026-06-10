@@ -1,9 +1,10 @@
+when:
+  - event:
+    - tag
+    - manual
+    
 steps:
   - name: build
-    when:
-      - event:
-        - tag
-        - manual
     image: gradle:jdk21-corretto-alpine
     commands:
       - gradle build
@@ -16,9 +17,7 @@ steps:
     image: woodpeckerci/plugin-release
     settings:
       api-key:
-        from_secret: github_release_key
+        from_secret: github-release-key
       files:
         - /crow/build/*.jar
-
-      
 
