@@ -21,6 +21,7 @@
 	  "compat.create.CreateTrackBlockOutlineMixin",
 	  "compat.create.CreateRaycastHelperMixin",
 	  "compat.create.CreateValueSettingsScreenMixin",
+	  "compat.create.CreateGoggleOverlayRendererMixin",
 	  "compat.create.CreateContraptionControlsMovingInteractionMixin",
 
 	  "compat.simulated.SimulatedPhysicsStaffClientHandlerMixin",

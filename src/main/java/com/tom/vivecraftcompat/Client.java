@@ -36,6 +36,10 @@ public class Client {
 	public static void init() {
 		NeoForge.EVENT_BUS.register(OverlayManager.class);
 		NeoForge.EVENT_BUS.register(com.tom.vivecraftcompat.simulated.HoldInteractionBillboard.class);
+		// Create-gated: the billboard type references Create's goggle classes, so it
+		// must not be touched on a pack without the mod.
+		if (ModList.get().isLoaded("create"))
+			NeoForge.EVENT_BUS.register(com.tom.vivecraftcompat.create.GoggleOverlayBillboard.class);
 		NeoForge.EVENT_BUS.register(Client.class);
 
 		config = new ModConfigFile(new File(FMLPaths.CONFIGDIR.get().toFile(), "vivecraftcompat.json"));
