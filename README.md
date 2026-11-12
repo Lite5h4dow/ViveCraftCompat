@@ -94,3 +94,42 @@ assets, layout and values are reused.
       `TrackPlacementOverlay` and `SchematicHandler`. Those are status indicators
       rather than info about the thing being pointed at, and they read fine on the
       world-space GUI layer.
+
+### Candidate mods for VR compat (not started)
+
+Same techniques as above — billboards for world-anchored info, the scroll bridge
+for anything wheel-driven, controller bindings for anything cursor-driven — but
+each mod needs its own input audit first.
+
+**Thaumaturge** (1.21.1 branch)
+
+- **Research table** — `ResearchTableScreen`. Aspect nodes are picked and dragged
+  with the mouse and the grid zooms on scroll, so this is the real blocker; it
+  wants controller pick/drag or a `FloatingGui` panel, not a cursor.
+- **Thaumonomicon** — `ThaumonomiconBrowserScreen` / `EntryDetailScreen`. Long
+  scrollable pages; likely wants page turning rather than pointing at a world-space
+  GUI.
+- **Caster work** — `FocalManipulatorScreen` (focus crafting on a grid) and
+  `FocusPouchScreen`.
+- **Held-item menus** — the `AbstractHeldItemMenu` family (hand mirror, golem
+  builder, seal, golem logistics, pech, potion sprayer, arcane bore, turrets) opens
+  from an item, not a block, so there is no world anchor to attach them to. Decide
+  between hand-locked (`FloatingGui`) and HUD.
+- Plain container GUIs (arcane workbench, smelter, thaumatorium, grindstone,
+  deconstruction table, void siphon, spa, thaumostatic harness) are probably just
+  scale and scroll comfort, since Vivecraft already gives them a world-space GUI
+  with a cursor.
+
+**Sophisticated Backpacks / Storage** (SophisticatedCore)
+
+- **Inventory grid** — `StorageScreenBase.mouseScrolled` drives
+  `InventoryScrollPanel`. Verify whether Vivecraft's gui scroll keys already reach
+  it; if not, this is the same feed `VRScrollBridge` gives the sticks.
+- **Upgrade tabs** — the `*UpgradeTab` strip assumes a cursor, and every upgrade
+  with a filter or recipe picker (`FilterLogicControlBase`, `LargeResultSelector`,
+  alchemy / compacting / cooking tabs) is a nested cursor UI on top of that.
+- **Screen size** — `BackpackScreen`, `BackpackSettingsScreen` and
+  `SettingsScreen` are large multi-pane layouts; candidates for a scale-to-VR
+  treatment rather than world anchoring.
+- Opening the backpack from its keybind while in VR, and the on-back rendering,
+  should be checked separately.
