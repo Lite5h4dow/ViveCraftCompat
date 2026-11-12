@@ -103,6 +103,25 @@ each mod needs its own input audit first.
 
 **Thaumaturge** (1.21.1 branch)
 
+Priority for personal use: wands, staves and the thaumostatic harness, since those
+are the parts you hold rather than open.
+
+- **Casting already works.** `ItemWand` covers wand/staff/sceptre and casts through
+  `use()` / `onUseTick()` / `releaseUsing()` — vanilla hold-and-release item use, so
+  the VR trigger drives charge, channel and release without any bridging.
+- **Focus switching does not.** `CasterKeyHandler` opens `RadialFocusOverlay`, which
+  picks a sector from `mouseHandler.xpos()/ypos()` and calls
+  `releaseMouse()` / `grabMouse()` around it. In VR the cursor is not hand-driven
+  and grabbing is a no-op, so the radial cannot be operated at all. Needs a VR
+  radial driven by stick angle or hand direction, with the mouse grab calls skipped.
+  Note `CHANGE_FOCUS` is also wired to swap-offhand while holding a caster.
+- **Harness toggle is free.** `TOGGLE_HOVER` is a plain `KeyMapping` consumed by
+  `HoverClientHandler`, so it can be bound to a controller button from Vivecraft's
+  bindings with no code change.
+- **HUD** — `HoverHudOverlay` draws the hover gauge at `guiHeight() / 2`, dead centre
+  of view; `CasterHudOverlay` puts the focus/charge dial bottom-left (`DIAL_SIZE` 32)
+  and `RechargeHudOverlay` stacks cooldowns along the bottom. The harness gauge is
+  the obvious billboard; the caster dial may want to be hand-locked instead.
 - **Research table** — `ResearchTableScreen`. Aspect nodes are picked and dragged
   with the mouse and the grid zooms on scroll, so this is the real blocker; it
   wants controller pick/drag or a `FloatingGui` panel, not a cursor.
