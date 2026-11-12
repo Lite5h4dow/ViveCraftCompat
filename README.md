@@ -118,6 +118,16 @@ are the parts you hold rather than open.
 - **Harness toggle is free.** `TOGGLE_HOVER` is a plain `KeyMapping` consumed by
   `HoverClientHandler`, so it can be bound to a controller button from Vivecraft's
   bindings with no code change.
+- **Held scale.** Casters are custom-rendered (`WandItemSpecialRenderer extends
+  BlockEntityWithoutLevelRenderer`) and the geometry already knows wand from staff
+  (`STAFF_MODEL_SHIFT`, `WandCapLayout.STAFF_OUTER_XZ/Y`), but the pose comes from
+  Vivecraft's `ItemInHandRendererVRMixin.renderItem`, which applies one flat scale
+  for every item. A staff therefore reads as an item, not as something you hold with
+  two hands. Needs a per-caster VR multiplier — and a grip offset along the rod so
+  the staff pivots at the hand instead of its model origin, otherwise scaling it up
+  makes it float out of your fist. Hook: mixin on that `renderItem` scale call, or
+  wrap the renderer and gate on `ItemDisplayContext.FIRST_PERSON_*` plus
+  `VRMode.isVR()`. The factors themselves have to be tuned in headset.
 - **HUD** — `HoverHudOverlay` draws the hover gauge at `guiHeight() / 2`, dead centre
   of view; `CasterHudOverlay` puts the focus/charge dial bottom-left (`DIAL_SIZE` 32)
   and `RechargeHudOverlay` stacks cooldowns along the bottom. The harness gauge is
