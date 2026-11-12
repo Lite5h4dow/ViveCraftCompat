@@ -108,6 +108,7 @@ public class SimulatedVRInputBridge {
 	private static Object steeringWheelManager;
 	private static Object physicsAssemblerManager;
 	private static Object handleManager;
+	private static Field holdInteractionActiveField;
 
 	private static boolean throttleLeverHandDriven;
 	private static boolean throttleLeverGripTracked;
@@ -555,6 +556,12 @@ public class SimulatedVRInputBridge {
 			throttleLeverValueField.setAccessible(true);
 			throttleLeverMouseMoveMethod = throttleLeverManager.getClass().getMethod("activeOnMouseMove", double.class, double.class);
 			holdInteractionStopMethod = holdInteractionManagerClass.getMethod("stop");
+			try {
+				holdInteractionActiveField = holdInteractionManagerClass.getDeclaredField("active");
+				holdInteractionActiveField.setAccessible(true);
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				ViveCraftCompat.LOGGER.warn("Simulated compat: HoldInteractionManager.active is unavailable, HUD overlays stay in screen space");
+			}
 			reflectionInitialized = true;
 			return true;
 		} catch (ReflectiveOperationException | RuntimeException e) {
@@ -591,14 +598,31 @@ public class SimulatedVRInputBridge {
 		return isUsable() && isThrottleLeverActive();
 	}
 
-	/** Block position of the gripped throttle lever, or null when not gripping. */
-	public static BlockPos getThrottleLeverGripPos() {
-		return isThrottleLeverGripActive() ? getInteractionPos(throttleLeverManager) : null;
+	/**
+	 * The hold interaction Simulated is currently running, whichever one it is —
+	 * lever, wheel, assembler or handle. Simulated keeps it in a static field that
+	 * its own HUD renderer reads, so this is the same instance whose panel would
+	 * otherwise be drawn in the middle of the screen.
+	 *
+	 * @return the active interaction, or null when nothing is being held
+	 */
+	public static Object getActiveHoldInteraction() {
+		if (!isReflectionReady() || holdInteractionActiveField == null)
+			return null;
+
+		try {
+			return holdInteractionActiveField.get(null);
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			// Losing the field costs the world-space panel, nothing else.
+			holdInteractionActiveField = null;
+			return null;
+		}
 	}
 
-	/** The live ThrottleLeverHandler, for rendering its own overlay in world space. */
-	public static Object getThrottleLeverHandler() {
-		return throttleLeverManager;
+	/** Block the active hold interaction is attached to, or null when idle. */
+	public static BlockPos getActiveHoldInteractionPos() {
+		Object active = getActiveHoldInteraction();
+		return active == null ? null : getInteractionPos(active);
 	}
 
 	private static boolean isHandleActive() {

@@ -35,7 +35,7 @@ public class Client {
 
 	public static void init() {
 		NeoForge.EVENT_BUS.register(OverlayManager.class);
-		NeoForge.EVENT_BUS.register(com.tom.vivecraftcompat.simulated.ThrottleLeverValueOverlay.class);
+		NeoForge.EVENT_BUS.register(com.tom.vivecraftcompat.simulated.HoldInteractionBillboard.class);
 		NeoForge.EVENT_BUS.register(Client.class);
 
 		config = new ModConfigFile(new File(FMLPaths.CONFIGDIR.get().toFile(), "vivecraftcompat.json"));
