@@ -46,6 +46,7 @@ import com.tom.cpl.config.ConfigEntry;
 import com.tom.vivecraftcompat.Client;
 import com.tom.vivecraftcompat.VRHelper;
 import com.tom.vivecraftcompat.VRMode;
+import com.tom.vivecraftcompat.VRScrollBridge;
 import com.tom.vivecraftcompat.ViveCraftCompat;
 import com.tom.vivecraftcompat.events.VRBindingsEvent;
 import com.tom.vivecraftcompat.events.VRUpdateControllersEvent;
@@ -90,7 +91,6 @@ public class SimulatedVRInputBridge {
 	private static Method onUseMethod;
 	private static Method onAttackMethod;
 	private static Method onMouseMoveMethod;
-	private static Method onMouseScrollMethod;
 	private static Method resultCancelledMethod;
 	private static Method holdInteractionActiveMethod;
 	private static Method blockHoldInteractionActiveMethod;
@@ -428,13 +428,6 @@ public class SimulatedVRInputBridge {
 		}
 	}
 
-	private static void fireMouseScroll(double amount) {
-		if (!isReflectionReady() || physicsStaffManager == null)
-			return;
-
-		invokeBooleanResult(onMouseScrollMethod, physicsStaffManager, 0.0D, amount);
-	}
-
 	private static boolean invokeBooleanResult(Method method, Object target, Object... args) {
 		try {
 			Object result = method.invoke(target, args);
@@ -551,7 +544,6 @@ public class SimulatedVRInputBridge {
 			onUseMethod = callbackClass.getMethod("onUse", int.class, int.class, KeyMapping.class);
 			onAttackMethod = callbackClass.getMethod("onAttack", int.class, int.class, KeyMapping.class);
 			onMouseMoveMethod = callbackClass.getMethod("onMouseMove", double.class, double.class);
-			onMouseScrollMethod = callbackClass.getMethod("onScroll", double.class, double.class);
 			resultCancelledMethod = resultClass.getMethod("cancelled");
 			holdInteractionActiveMethod = holdInteractionManagerClass.getMethod("isActive");
 			blockHoldInteractionActiveMethod = blockHoldInteractionClass.getMethod("isActive");
@@ -691,10 +683,12 @@ public class SimulatedVRInputBridge {
 	}
 
 	/**
-	 * Handle (sublevel grip): Simulated feeds the mouse wheel through
-	 * ClientHandleHandler.onScroll to grow and shrink the extendo range. There is
-	 * no wheel in VR, so the left free-move stick stands in while the grip is
-	 * held — the same mapping the physics staff already uses for its distance.
+	 * Handle (sublevel grip): Simulated grows and shrinks the extendo range from
+	 * mouse wheel input, read inside ClientHandleHandler.onScroll. There is no
+	 * wheel in VR, so the left free-move stick stands in while the grip is held —
+	 * the same mapping the physics staff already uses for its distance. The
+	 * notches go through {@link VRScrollBridge} rather than into the handler, so
+	 * they take the same path a real wheel does.
 	 */
 	private static void processHandleStickInput() {
 		if (!isUsable() || !isHandleActive() || !isLeftLowerTriggerHeld())
@@ -705,7 +699,7 @@ public class SimulatedVRInputBridge {
 		if (Math.abs(delta) < 0.001D)
 			return;
 
-		invokeBooleanResult(onMouseScrollMethod, handleManager, 0.0D, delta * STAFF_DISTANCE_STICK_SCROLL_SCALE);
+		VRScrollBridge.scroll(delta * STAFF_DISTANCE_STICK_SCROLL_SCALE);
 	}
 
 	/**
@@ -890,7 +884,7 @@ public class SimulatedVRInputBridge {
 		if (Math.abs(staffRotateDelta.x()) >= 0.001D || Math.abs(staffRotateDelta.y()) >= 0.001D)
 			fireMouseMove(0.0D, 0.0D, 0.0D, staffRotateDelta.x(), staffRotateDelta.y());
 		if (Math.abs(staffScrollDelta) >= 0.001D)
-			fireMouseScroll(staffScrollDelta);
+			VRScrollBridge.scroll(staffScrollDelta);
 	}
 
 	private static double getWheelHandAngle() {

@@ -21,6 +21,7 @@ import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.NeoForge;
 
 import com.tom.vivecraftcompat.VRMode;
+import com.tom.vivecraftcompat.VRScrollBridge;
 import com.tom.vivecraftcompat.ViveCraftCompat;
 import com.tom.vivecraftcompat.events.VRBindingsEvent;
 
@@ -54,8 +55,6 @@ public class CreateSchematicVRInputBridge {
 	private static Object toolMenuKey;
 	private static Method isActiveMethod;
 	private static Method schematicAndQuillIsActiveMethod;
-	private static Method mouseScrolledMethod;
-	private static Method schematicAndQuillMouseScrolledMethod;
 	private static Method onKeyInputMethod;
 	private static Method getKeybindMethod;
 
@@ -202,7 +201,7 @@ public class CreateSchematicVRInputBridge {
 
 		if (toolMenuScrollDirection != direction || toolMenuScrollCooldown <= 0) {
 			boolean sameDirection = toolMenuScrollDirection == direction;
-			invokeSchematicMouseScrolled(direction);
+			VRScrollBridge.scroll(direction);
 			toolMenuScrollDirection = direction;
 			toolMenuScrollCooldown = sameDirection ? REPEAT_SCROLL_DELAY : INITIAL_SCROLL_DELAY;
 			return;
@@ -220,7 +219,7 @@ public class CreateSchematicVRInputBridge {
 
 		if (toolActionScrollDirection != direction || toolActionScrollCooldown <= 0) {
 			boolean sameDirection = toolActionScrollDirection == direction;
-			invokeActiveMouseScrolled(direction);
+			VRScrollBridge.scroll(direction);
 			toolActionScrollDirection = direction;
 			toolActionScrollCooldown = sameDirection ? REPEAT_SCROLL_DELAY : INITIAL_SCROLL_DELAY;
 			return;
@@ -312,38 +311,6 @@ public class CreateSchematicVRInputBridge {
 		}
 	}
 
-	private static void invokeActiveMouseScrolled(double amount) {
-		if (isDeployedSchematicActive()) {
-			invokeSchematicMouseScrolled(amount);
-			return;
-		}
-
-		if (isSchematicAndQuillActive())
-			invokeSchematicAndQuillMouseScrolled(amount);
-	}
-
-	private static void invokeSchematicMouseScrolled(double amount) {
-		if (!isReflectionReady())
-			return;
-
-		try {
-			mouseScrolledMethod.invoke(schematicHandler, amount);
-		} catch (ReflectiveOperationException | RuntimeException e) {
-			disableReflection("Failed to forward Create schematic scroll input", e);
-		}
-	}
-
-	private static void invokeSchematicAndQuillMouseScrolled(double amount) {
-		if (!isReflectionReady())
-			return;
-
-		try {
-			schematicAndQuillMouseScrolledMethod.invoke(schematicAndQuillHandler, amount);
-		} catch (ReflectiveOperationException | RuntimeException e) {
-			disableReflection("Failed to forward Create schematic and quill scroll input", e);
-		}
-	}
-
 	private static int getToolMenuKeyCode() throws ReflectiveOperationException {
 		Object keyMapping = getKeybindMethod.invoke(toolMenuKey);
 		if (keyMapping instanceof KeyMapping mapping)
@@ -373,8 +340,6 @@ public class CreateSchematicVRInputBridge {
 			isActiveMethod = schematicHandlerClass.getMethod("isActive");
 			schematicAndQuillIsActiveMethod = schematicAndQuillHandlerClass.getDeclaredMethod("isActive");
 			schematicAndQuillIsActiveMethod.setAccessible(true);
-			mouseScrolledMethod = schematicHandlerClass.getMethod("mouseScrolled", double.class);
-			schematicAndQuillMouseScrolledMethod = schematicAndQuillHandlerClass.getMethod("mouseScrolled", double.class);
 			onKeyInputMethod = schematicHandlerClass.getMethod("onKeyInput", int.class, boolean.class);
 			getKeybindMethod = allKeysClass.getMethod("getKeybind");
 			toolMenuKey = Enum.valueOf((Class<Enum>) allKeysClass.asSubclass(Enum.class), "TOOL_MENU");
