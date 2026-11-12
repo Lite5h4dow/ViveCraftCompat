@@ -159,8 +159,29 @@ public class SableVRBridge {
 		if (player == null || target == null)
 			return false;
 
-		double distance = player.blockInteractionRange() + reachBuffer;
-		Vec3 projectedTarget = projectOutOfSubLevel(player.level(), new Vec3(target.x(), target.y(), target.z()));
+		return withinSeatedRange(player, new Vec3(target.x(), target.y(), target.z()),
+				player.blockInteractionRange() + reachBuffer);
+	}
+
+	/**
+	 * Absolute-range variant. Simulated's handle passes its own extendo range
+	 * rather than adding it to the player's reach, so the two must not be mixed up.
+	 */
+	public static boolean isInSeatedInteractionRange(Player player, org.joml.Vector3dc target, double range) {
+		if (player == null || target == null)
+			return false;
+
+		return withinSeatedRange(player, new Vec3(target.x(), target.y(), target.z()), range);
+	}
+
+	private static boolean withinSeatedRange(Player player, Vec3 target, double distance) {
+		// Desktop never has a Sable seated eye pose to project against, and the
+		// sublevel-aware projection below costs a reflection call. Keep the
+		// non-VR path equivalent to Simulated's own range check.
+		if (!VRMode.isVR())
+			return player.getEyePosition().distanceToSqr(target) < distance * distance;
+
+		Vec3 projectedTarget = projectOutOfSubLevel(player.level(), target);
 		try {
 			return getSeatedEyePosition(player, getPartialTick()).distanceToSqr(projectedTarget) < distance * distance;
 		} catch (ReflectiveOperationException | RuntimeException e) {

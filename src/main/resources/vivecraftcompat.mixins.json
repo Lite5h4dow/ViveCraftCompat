@@ -30,6 +30,7 @@
 	  "compat.simulated.SimulatedThrottleLeverGameRendererMixin",
 	  "compat.simulated.SimulatedUseOnContextMixin",
 	  "compat.simulated.SimulatedBlockPlaceContextMixin",
+	  "compat.simulated.SimulatedClientHandleHandlerMixin",
 	  "compat.simulated.SimulatedSteeringWheelHandlerMixin",
 	  "compat.simulated.SimulatedSteeringWheelBlockMixin",
 

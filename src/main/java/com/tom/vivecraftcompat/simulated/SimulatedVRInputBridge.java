@@ -35,6 +35,9 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -57,6 +60,23 @@ public class SimulatedVRInputBridge {
 	private static final double STAFF_DISTANCE_STICK_SCROLL_SCALE = 0.35D;
 	private static final double STAFF_ROTATE_STICK_SCALE = 3.0D;
 	private static final double STAFF_STICK_DEADZONE = 0.15D;
+	/*
+	 * Hand-driven throttle lever (floor-mounted). The lever model pivots about a
+	 * horizontal axis through (0.5, 0.875, 0.5) in block space and swings +-40
+	 * degrees, where 0 degrees is upright and value = 0.5. Simulated's own handler
+	 * integrates mouse pitch as value -= delta / 180, so absolute control is just
+	 * "feed it the pitch delta that lands on the wanted value".
+	 */
+	private static final double LEVER_PIVOT_Y = 0.875D;
+	private static final double LEVER_PIVOT_Z = 0.5D;
+	private static final double LEVER_SWING_HALF_ANGLE = 40.0D;
+	private static final double LEVER_VALUE_DEGREES = 180.0D;
+	private static final double LEVER_MAX_AXIS_OFFSET = 0.6D;
+	private static final double LEVER_MIN_RADIUS = 0.15D;
+	private static final double LEVER_MAX_RADIUS = 2.5D;
+	// Full 0..1 travel in half a second: fast enough to feel direct, slow enough
+	// that grabbing a lever eases from wherever it sat instead of snapping.
+	private static final double LEVER_SMOOTHING_PER_SECOND = 2.0D;
 	private static final Vector2fc ZERO_STICK = new Vector2f();
 
 	private static boolean initialized;
@@ -76,6 +96,9 @@ public class SimulatedVRInputBridge {
 	private static Method blockHoldInteractionActiveMethod;
 	private static Method getInteractionPosMethod;
 	private static Method getPhysicsStaffDragSessionMethod;
+	private static Field throttleLeverValueField;
+	private static Method throttleLeverMouseMoveMethod;
+	private static Method holdInteractionStopMethod;
 	private static Method getTypewriterModeMethod;
 	private static Method onTypewriterKeyPressMethod;
 	private static Iterable<?> clickInteractions = java.util.List.of();
@@ -84,7 +107,11 @@ public class SimulatedVRInputBridge {
 	private static Object throttleLeverManager;
 	private static Object steeringWheelManager;
 	private static Object physicsAssemblerManager;
+	private static Object handleManager;
 
+	private static boolean throttleLeverHandDriven;
+	private static boolean throttleLeverGripTracked;
+	private static double throttleLeverSmoothedValue;
 	private static Vector3f previousControllerDirection;
 	private static double wheelStartHandAngle = Double.NaN;
 	private static double wheelLastRelativeDegrees;
@@ -200,6 +227,8 @@ public class SimulatedVRInputBridge {
 
 	public static float afterProcessBindings(float seatedRotation) {
 		processPhysicsStaffStickInput();
+		processHandleStickInput();
+		processThrottleLeverHandControl();
 
 		if (!restoreStaffViewRotation)
 			return seatedRotation;
@@ -269,6 +298,13 @@ public class SimulatedVRInputBridge {
 		if (key == GLFW.GLFW_KEY_ESCAPE)
 			return dismissTypewriterKeyboardFromInput();
 
+		// The linked typewriter is a VR affordance: it forwards controller key input
+		// into Simulated's handler and cancels the original keystroke. Vivecraft's
+		// InputSimulator is on the path in desktop mode too, so without this guard a
+		// desktop player loses every key while the typewriter is open.
+		if (!VRMode.isVR())
+			return false;
+
 		if (!isTypewriterKeyboardInputMode() || key == GLFW.GLFW_KEY_UNKNOWN)
 			return false;
 
@@ -284,6 +320,9 @@ public class SimulatedVRInputBridge {
 		if (key == GLFW.GLFW_KEY_UNKNOWN)
 			return false;
 
+		if (!VRMode.isVR())
+			return false;
+
 		if (!pressedTypewriterKeys.remove(key))
 			return isTypewriterKeyboardInputMode();
 
@@ -295,6 +334,9 @@ public class SimulatedVRInputBridge {
 	}
 
 	public static boolean typeTypewriterCharacter(char character) {
+		if (!VRMode.isVR())
+			return false;
+
 		if (!isTypewriterKeyboardInputMode())
 			return false;
 
@@ -366,7 +408,13 @@ public class SimulatedVRInputBridge {
 			double callbackYaw = yaw;
 			double callbackPitch = pitch;
 
-			if (callback == throttleLeverManager || callback == physicsAssemblerManager) {
+			if (callback == throttleLeverManager) {
+				// A floor lever driven by hand position owns its value; letting the
+				// accumulated controller pitch also feed it would fight the absolute angle.
+				if (throttleLeverHandDriven)
+					continue;
+				callbackPitch = -callbackPitch;
+			} else if (callback == physicsAssemblerManager) {
 				callbackPitch = -callbackPitch;
 			} else if (callback == steeringWheelManager) {
 				callbackYaw = wheelYaw;
@@ -496,6 +544,10 @@ public class SimulatedVRInputBridge {
 			throttleLeverManager = clickInteractionsClass.getField("THROTTLE_LEVER_MANAGER").get(null);
 			steeringWheelManager = clickInteractionsClass.getField("STEERING_WHEEL_MANAGER").get(null);
 			physicsAssemblerManager = clickInteractionsClass.getField("PHYSICS_ASSEMBLER_MANAGER").get(null);
+			// Optional: a renamed/removed handle must degrade handle support only,
+			// not disable every other Simulated input path (the whole bridge used to
+			// go dark on a single missing symbol).
+			handleManager = optionalStaticField(clickInteractionsClass, "HANDLE_HANDLER");
 			onUseMethod = callbackClass.getMethod("onUse", int.class, int.class, KeyMapping.class);
 			onAttackMethod = callbackClass.getMethod("onAttack", int.class, int.class, KeyMapping.class);
 			onMouseMoveMethod = callbackClass.getMethod("onMouseMove", double.class, double.class);
@@ -505,6 +557,12 @@ public class SimulatedVRInputBridge {
 			blockHoldInteractionActiveMethod = blockHoldInteractionClass.getMethod("isActive");
 			getInteractionPosMethod = blockHoldInteractionClass.getMethod("getInteractionPos");
 			getPhysicsStaffDragSessionMethod = physicsStaffClientHandler.getClass().getMethod("getDragSession");
+			// Hand-driven throttle lever: read its integrated value and reuse its own
+			// clamping/packet path instead of poking at signal/lastSignal by hand.
+			throttleLeverValueField = throttleLeverManager.getClass().getDeclaredField("value");
+			throttleLeverValueField.setAccessible(true);
+			throttleLeverMouseMoveMethod = throttleLeverManager.getClass().getMethod("activeOnMouseMove", double.class, double.class);
+			holdInteractionStopMethod = holdInteractionManagerClass.getMethod("stop");
 			reflectionInitialized = true;
 			return true;
 		} catch (ReflectiveOperationException | RuntimeException e) {
@@ -536,8 +594,40 @@ public class SimulatedVRInputBridge {
 		return isBlockHoldInteractionActive(physicsAssemblerManager, "physics assembler");
 	}
 
+	/** True while a throttle lever grip is held by this player. */
+	public static boolean isThrottleLeverGripActive() {
+		return isUsable() && isThrottleLeverActive();
+	}
+
+	/** Block position of the gripped throttle lever, or null when not gripping. */
+	public static BlockPos getThrottleLeverGripPos() {
+		return isThrottleLeverGripActive() ? getInteractionPos(throttleLeverManager) : null;
+	}
+
+	/** The live ThrottleLeverHandler, for rendering its own overlay in world space. */
+	public static Object getThrottleLeverHandler() {
+		return throttleLeverManager;
+	}
+
+	private static boolean isHandleActive() {
+		return isBlockHoldInteractionActive(handleManager, "handle");
+	}
+
 	private static boolean isInputLockActive() {
-		return isThrottleLeverActive() || isSteeringWheelActive() || isPhysicsAssemblerActive();
+		return isThrottleLeverActive() || isSteeringWheelActive() || isPhysicsAssemblerActive() || isHandleActive();
+	}
+
+	/**
+	 * Resolve a nullable manager field. Simulated renames these between releases;
+	 * losing one feature is tolerable, losing the whole bridge is not.
+	 */
+	private static Object optionalStaticField(Class<?> owner, String name) {
+		try {
+			return owner.getField(name).get(null);
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			ViveCraftCompat.LOGGER.warn("Simulated compat: optional field {} is unavailable, its VR input path stays off", name);
+			return null;
+		}
 	}
 
 	private static void restoreMaskedUseKey() {
@@ -598,6 +688,176 @@ public class SimulatedVRInputBridge {
 			return 0.0D;
 
 		return delta * STAFF_DISTANCE_STICK_SCROLL_SCALE;
+	}
+
+	/**
+	 * Handle (sublevel grip): Simulated feeds the mouse wheel through
+	 * ClientHandleHandler.onScroll to grow and shrink the extendo range. There is
+	 * no wheel in VR, so the left free-move stick stands in while the grip is
+	 * held — the same mapping the physics staff already uses for its distance.
+	 */
+	private static void processHandleStickInput() {
+		if (!isUsable() || !isHandleActive() || !isLeftLowerTriggerHeld())
+			return;
+
+		Vector2fc axis = getRawAxis(VivecraftVRMod.INSTANCE.keyFreeMoveStrafe);
+		double delta = applyStickDeadzone(axis.y());
+		if (Math.abs(delta) < 0.001D)
+			return;
+
+		invokeBooleanResult(onMouseScrollMethod, handleManager, 0.0D, delta * STAFF_DISTANCE_STICK_SCROLL_SCALE);
+	}
+
+	/**
+	 * Hand-driven analog lever: while the grip is active the handle points at the
+	 * controller, and the swing angle out of vertical becomes the value. Moving the
+	 * hand away from the pivot axis ends the grip where it stands, so a careless
+	 * arm movement releases the lever instead of wrenching it around.
+	 *
+	 * Only floor-mounted levers are handled. The wall and ceiling variants rotate
+	 * the model a further 90/180 degrees about X on top of the facing yaw, and that
+	 * transform has not been verified in game — those keep Simulated's own
+	 * mouse-delta path rather than risk a guessed pivot.
+	 */
+	private static void processThrottleLeverHandControl() {
+		if (!isUsable() || !isThrottleLeverActive()) {
+			throttleLeverHandDriven = false;
+			throttleLeverGripTracked = false;
+			return;
+		}
+
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.level == null || minecraft.player == null)
+			return;
+
+		BlockPos pos = getInteractionPos(throttleLeverManager);
+		if (pos == null)
+			return;
+
+		BlockState state = minecraft.level.getBlockState(pos);
+		Direction facing = horizontalFacingOf(state);
+		if (facing == null || attachFaceOf(state) != AttachFace.FLOOR)
+			return;
+
+		double yaw = Math.toRadians(switch (facing) {
+			case SOUTH -> 0.0D;
+			case WEST -> 90.0D;
+			case NORTH -> 180.0D;
+			default -> 270.0D; // EAST
+		});
+		double cos = Math.cos(yaw);
+		double sin = Math.sin(yaw);
+
+		Vec3 center = Vec3.atCenterOf(pos);
+		// Model-local pivot is (0, 0.875, 0.5); the model yaw is applied about the
+		// block's centre, so rotate the offset about (0.5, *, 0.5) first.
+		double offsetX = -0.5D;
+		double offsetZ = LEVER_PIVOT_Z - 0.5D;
+		Vec3 pivot = new Vec3(center.x + offsetX * cos + offsetZ * sin, pos.getY() + LEVER_PIVOT_Y,
+				center.z - offsetX * sin + offsetZ * cos);
+
+		// Model basis after the facing yaw: +Y stays up, +Z is the facing direction,
+		// and the lever swings about +X.
+		Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
+		Vec3 forward = new Vec3(sin, 0.0D, cos);
+		Vec3 axis = new Vec3(cos, 0.0D, -sin);
+
+		Vec3 hand = SableVRBridge.getSeatedHandRayOrigin(minecraft.player, VRHelper.getRayOrigin(), getPartialTick());
+		hand = SableVRBridge.transformPositionIntoContainingSubLevel(minecraft.level, center, hand);
+
+		Vec3 relative = hand.subtract(pivot);
+		double alongAxis = relative.dot(axis);
+		Vec3 radial = relative.subtract(axis.scale(alongAxis));
+		double radius = radial.length();
+
+		if (Math.abs(alongAxis) > LEVER_MAX_AXIS_OFFSET || radius < LEVER_MIN_RADIUS || radius > LEVER_MAX_RADIUS) {
+			// Stop where it is: the lever keeps the last value we drove, which is why
+			// the smoothed value (not the raw hand angle) is what reaches it each tick.
+			throttleLeverGripTracked = false;
+			throttleLeverHandDriven = false;
+			releaseThrottleLeverGrip();
+			return;
+		}
+
+		double angle = Math.toDegrees(Math.atan2(radial.dot(forward), radial.dot(up)));
+		double target = Math.min(1.0D, Math.max(0.0D,
+				(angle + LEVER_SWING_HALF_ANGLE) / (LEVER_SWING_HALF_ANGLE * 2.0D)));
+
+		// Start the ease from the lever's own value so the first frame of a grip does
+		// not jump to the hand, then move toward it at a bounded rate.
+		if (!throttleLeverGripTracked) {
+			throttleLeverSmoothedValue = readThrottleLeverValue();
+			throttleLeverGripTracked = true;
+		}
+		throttleLeverSmoothedValue = moveTowards(throttleLeverSmoothedValue, target,
+				LEVER_SMOOTHING_PER_SECOND * getTickSeconds());
+
+		throttleLeverHandDriven = true;
+		driveThrottleLever(throttleLeverSmoothedValue);
+	}
+
+	private static double readThrottleLeverValue() {
+		try {
+			return throttleLeverValueField.getFloat(throttleLeverManager);
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			disableReflection("Failed to read the Simulated throttle lever value", e);
+			return 0.5D;
+		}
+	}
+
+	private static double moveTowards(double current, double target, double maxStep) {
+		double delta = target - current;
+		if (Math.abs(delta) <= maxStep)
+			return target;
+		return current + Math.signum(delta) * maxStep;
+	}
+
+	/** Seconds represented by the elapsed game ticks of this client frame. */
+	private static double getTickSeconds() {
+		float gameTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
+		return Math.min(0.25D, Math.max(0.0D, gameTicks / 20.0D));
+	}
+
+	private static void driveThrottleLever(double target) {
+		try {
+			double current = readThrottleLeverValue();
+			// The handler integrates pitch as value -= pitch / 180; invert that to land
+			// on the wanted value and let its own clamping and packet sync run.
+			double pitch = (current - target) * LEVER_VALUE_DEGREES;
+			if (Math.abs(pitch) < 1.0E-4D)
+				return;
+			throttleLeverMouseMoveMethod.invoke(throttleLeverManager, 0.0D, pitch);
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			disableReflection("Failed to drive the Simulated throttle lever from the VR hand", e);
+		}
+	}
+
+	private static void releaseThrottleLeverGrip() {
+		try {
+			holdInteractionStopMethod.invoke(null);
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			disableReflection("Failed to release the Simulated throttle lever grip", e);
+		}
+	}
+
+	private static Direction horizontalFacingOf(BlockState state) {
+		for (Property<?> property : state.getProperties()) {
+			if (property instanceof DirectionProperty directionProperty) {
+				Direction direction = state.getValue(directionProperty);
+				if (direction.getAxis().isHorizontal())
+					return direction;
+			}
+		}
+		return null;
+	}
+
+	private static AttachFace attachFaceOf(BlockState state) {
+		for (Property<?> property : state.getProperties()) {
+			if (property instanceof EnumProperty<?> enumProperty
+					&& AttachFace.class.equals(enumProperty.getValueClass()))
+				return (AttachFace) state.getValue(enumProperty);
+		}
+		return AttachFace.FLOOR;
 	}
 
 	private static Vector2fc getPhysicsStaffRotateDelta() {
