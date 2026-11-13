@@ -25,7 +25,7 @@ public class SimulatedClientHandleHandlerMixin {
 
 	@Redirect(
 			method = "activeTick",
-			at = @At(value = "INVOKE", target = "Ldev/simulated_team/simulated/util/hold_interaction/BlockHoldInteraction;inInteractionRange(Lnet/minecraft/world/entity/player/Player;Lorg/joml/Vector3dc;D)Z"),
+			at = @At(value = "INVOKE", target = "Ldev/simulated_team/simulated/content/blocks/handle/ClientHandleHandler;inInteractionRange(Lnet/minecraft/world/entity/player/Player;Lorg/joml/Vector3dc;D)Z"),
 			remap = false)
 	private boolean vivecraftcompat$useSableSeatedHandleRange(Player player, Vector3dc target, double range) {
 		return SableVRBridge.isInSeatedInteractionRange(player, target, range);

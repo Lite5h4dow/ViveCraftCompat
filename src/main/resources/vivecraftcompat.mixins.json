@@ -35,6 +35,7 @@
 	  "compat.simulated.SimulatedHoldInteractionManagerMixin",
 	  "compat.simulated.SimulatedSteeringWheelHandlerMixin",
 	  "compat.simulated.SimulatedSteeringWheelBlockMixin",
+	  "compat.simulated.SimulatedLinkedTypewriterBlockEntityMixin",
 
 	  "MinecraftMixin",
 	  "MinecraftKeyboardHandlerMixin",

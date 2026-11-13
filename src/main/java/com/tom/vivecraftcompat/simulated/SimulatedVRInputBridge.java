@@ -1031,6 +1031,9 @@ public class SimulatedVRInputBridge {
 	}
 
 	private static boolean isTypewriterKeyboardInputMode() {
+		// SCREEN_BINDING is deliberately excluded: Simulated's own onKeyPress bails
+		// out of the typing branch in that mode and lets the open screen own the
+		// keystrokes. Forwarding here would double-type.
 		String modeName = getTypewriterModeName();
 		return "ACTIVE".equals(modeName) || "BINDING_FROM_ITEM".equals(modeName);
 	}
@@ -1058,7 +1061,12 @@ public class SimulatedVRInputBridge {
 	}
 
 	private static void hideTypewriterKeyboard() {
-		disconnectTypewriterIfActive();
+		// Only send the simulated ESC that disconnects the player when we are the
+		// reason the keyboard came up. Previously the caller ran this on every tick
+		// the mode was not ACTIVE, so entering the typewriter (SCREEN_BINDING) tore
+		// itself down and the player was kicked off the moment they got on.
+		if (typewriterKeyboardShown || typewriterKeyboardOverrodePhysical)
+			disconnectTypewriterIfActive();
 		if (typewriterKeyboardShown) {
 			KeyboardHandler.hideOverlay(CloseKeyboardContext.FORCE);
 			typewriterKeyboardShown = false;
