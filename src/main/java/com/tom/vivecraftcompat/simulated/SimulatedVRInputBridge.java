@@ -23,6 +23,7 @@ import org.vivecraft.client_vr.provider.openvr_lwjgl.VRInputAction.KeyListener;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
@@ -191,7 +192,10 @@ public class SimulatedVRInputBridge {
 			populateListeners();
 
 		if (typewriterKeyboardShown && VivecraftVRMod.INSTANCE.keyMenuButton.consumeClick()) {
-			dismissTypewriterKeyboardFromInput();
+			if (isTypewriterBindingScreenOpen())
+				closeTypewriterBindingScreen();
+			else
+				dismissTypewriterKeyboardFromInput();
 			return;
 		}
 
@@ -1030,6 +1034,18 @@ public class SimulatedVRInputBridge {
 		return "ACTIVE".equals(modeName) || "SCREEN_BINDING".equals(modeName) || "BINDING_FROM_ITEM".equals(modeName);
 	}
 
+	private static boolean isTypewriterBindingScreenOpen() {
+		return "SCREEN_BINDING".equals(getTypewriterModeName());
+	}
+
+	private static void closeTypewriterBindingScreen() {
+		// Same path as pressing ESC on the screen: LinkedTypewriterScreen.onClose
+		// saves the entries, resets the mode to IDLE and disconnects the user.
+		Screen screen = Minecraft.getInstance().screen;
+		if (screen != null)
+			screen.onClose();
+	}
+
 	private static boolean isTypewriterKeyboardInputMode() {
 		// SCREEN_BINDING is deliberately excluded: Simulated's own onKeyPress bails
 		// out of the typing branch in that mode and lets the open screen own the
@@ -1051,6 +1067,14 @@ public class SimulatedVRInputBridge {
 	}
 
 	public static boolean dismissTypewriterKeyboardFromInput() {
+		// The key-binding screen is a real Screen and owns its own close handling:
+		// LinkedTypewriterScreen.onClose resets the mode to IDLE and tells the
+		// server to disconnect the user. Returning true here would cancel ESC before
+		// the screen ever sees it, trapping the player on a screen they cannot close
+		// (and leaving the VR keyboard hidden while the mode stays SCREEN_BINDING).
+		if (isTypewriterBindingScreenOpen())
+			return false;
+
 		if (!typewriterKeyboardShown && !typewriterKeyboardOverrodePhysical)
 			return false;
 
