@@ -116,6 +116,11 @@ public class OverlayManager {
 		return VRMode.isVR() && screens.stream().anyMatch(h -> h.screen instanceof HudOverlayScreen s && s.isEnabled() && s.overlays.contains(rl));
 	}
 
+	/** True while the overlay manager is capturing its own layers into framebuffers. */
+	public static boolean isRendering() {
+		return overlayRendering;
+	}
+
 	public static void addLayer(Layer layer) {
 		screens.add(layer);
 	}

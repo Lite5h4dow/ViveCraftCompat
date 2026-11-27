@@ -23,6 +23,7 @@ import com.tom.vivecraftcompat.overlay.OverlayConfig;
 import com.tom.vivecraftcompat.overlay.OverlayManager;
 import com.tom.vivecraftcompat.overlay.OverlayManager.Layer;
 import com.tom.vivecraftcompat.overlay.OverlaySettingsGui;
+import com.tom.vivecraftcompat.create.CreateGoggleOverlay;
 import com.tom.vivecraftcompat.create.CreateSeatVRBridge;
 import com.tom.vivecraftcompat.create.CreateSchematicVRInputBridge;
 import com.tom.vivecraftcompat.simulated.SableVRBridge;
@@ -76,5 +77,6 @@ public class Client {
 		if(ModList.get().isLoaded("jade"))JadeOverlay.register(event);
 		if(ModList.get().isLoaded("journeymap"))JourneyMapOverlay.register(event);
 		if(ModList.get().isLoaded("theoneprobe"))TOPOverlay.register(event);
+		if(ModList.get().isLoaded("create"))CreateGoggleOverlay.register(event);
 	}
 }
