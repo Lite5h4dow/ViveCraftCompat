@@ -71,7 +71,7 @@ public class SimulatedVRInputBridge {
 	 */
 	private static final double LEVER_PIVOT_Y = 0.875D;
 	private static final double LEVER_PIVOT_Z = 0.5D;
-	private static final double LEVER_SWING_HALF_ANGLE = 40.0D;
+	private static final double LEVER_HAND_TRAVEL = 0.4D;
 	private static final double LEVER_VALUE_DEGREES = 180.0D;
 	private static final double LEVER_MAX_AXIS_OFFSET = 0.6D;
 	private static final double LEVER_MIN_RADIUS = 0.15D;
@@ -113,6 +113,8 @@ public class SimulatedVRInputBridge {
 
 	private static boolean throttleLeverHandDriven;
 	private static boolean throttleLeverGripTracked;
+	private static double throttleLeverGripValue;
+	private static double throttleLeverGripForward;
 	private static double throttleLeverSmoothedValue;
 	private static Vector3f previousControllerDirection;
 	private static double wheelStartHandAngle = Double.NaN;
@@ -784,7 +786,6 @@ public class SimulatedVRInputBridge {
 
 		// Model basis after the facing yaw: +Y stays up, +Z is the facing direction,
 		// and the lever swings about +X.
-		Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
 		Vec3 forward = new Vec3(sin, 0.0D, cos);
 		Vec3 axis = new Vec3(cos, 0.0D, -sin);
 
@@ -805,21 +806,20 @@ public class SimulatedVRInputBridge {
 			return;
 		}
 
-		double angle = Math.toDegrees(Math.atan2(radial.dot(forward), radial.dot(up)));
-		double target = Math.min(1.0D, Math.max(0.0D,
-				(angle + LEVER_SWING_HALF_ANGLE) / (LEVER_SWING_HALF_ANGLE * 2.0D)));
-		if (facing.getAxis() == Direction.Axis.X) {
-			// The X-axis floor lever uses the swapped handle model; its physical
-			// swing runs opposite the facing-derived angle.
-			target = 1.0D - target;
-		}
-
-		// Start the ease from the lever's own value so the first frame of a grip does
-		// not jump to the hand, then move toward it at a bounded rate.
+		// Relative drag from the grip point, the same model as Simulated's mouse
+		// path. An absolute hand angle flips the lever when the hand crosses the
+		// pivot plane during a normal pull.
 		if (!throttleLeverGripTracked) {
-			throttleLeverSmoothedValue = readThrottleLeverValue();
+			throttleLeverGripValue = readThrottleLeverValue();
+			throttleLeverGripForward = radial.dot(forward);
+			throttleLeverSmoothedValue = throttleLeverGripValue;
 			throttleLeverGripTracked = true;
 		}
+
+		double travel = radial.dot(forward) - throttleLeverGripForward;
+		double xAxisSign = facing.getAxis() == Direction.Axis.X ? -1.0D : 1.0D;
+		double target = Math.min(1.0D, Math.max(0.0D,
+				throttleLeverGripValue + travel / LEVER_HAND_TRAVEL * xAxisSign));
 		throttleLeverSmoothedValue = moveTowards(throttleLeverSmoothedValue, target,
 				LEVER_SMOOTHING_PER_SECOND * getTickSeconds());
 
