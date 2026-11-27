@@ -769,10 +769,13 @@ public class SimulatedVRInputBridge {
 			throttleLeverGripTracked = true;
 		}
 
+		// The hand travel runs along the facing direction for every floor mount.
+		// East/west must not be inverted: the X-axis handle swap is only the
+		// interaction shape, and the old inverted target is what made them run
+		// backwards while north/south were correct.
 		double travel = radial.dot(forward) - throttleLeverGripForward;
-		double xAxisSign = facing.getAxis() == Direction.Axis.X ? -1.0D : 1.0D;
 		double target = Math.min(1.0D, Math.max(0.0D,
-				throttleLeverGripValue + travel / LEVER_HAND_TRAVEL * xAxisSign));
+				throttleLeverGripValue + travel / LEVER_HAND_TRAVEL));
 		throttleLeverSmoothedValue = moveTowards(throttleLeverSmoothedValue, target,
 				LEVER_SMOOTHING_PER_SECOND * getTickSeconds());
 
