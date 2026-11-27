@@ -808,6 +808,11 @@ public class SimulatedVRInputBridge {
 		double angle = Math.toDegrees(Math.atan2(radial.dot(forward), radial.dot(up)));
 		double target = Math.min(1.0D, Math.max(0.0D,
 				(angle + LEVER_SWING_HALF_ANGLE) / (LEVER_SWING_HALF_ANGLE * 2.0D)));
+		if (facing.getAxis() == Direction.Axis.X) {
+			// The X-axis floor lever uses the swapped handle model; its physical
+			// swing runs opposite the facing-derived angle.
+			target = 1.0D - target;
+		}
 
 		// Start the ease from the lever's own value so the first frame of a grip does
 		// not jump to the hand, then move toward it at a bounded rate.

@@ -23,6 +23,7 @@ steps:
       title: ${CI_COMMIT_TAG}
       api-key:
         from_secret: github-release-key
+      prerelease: true
       files:
         - /crow/build/*.jar
 

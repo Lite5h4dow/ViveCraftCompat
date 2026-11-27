@@ -13,6 +13,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import com.simibubi.create.content.equipment.goggles.GoggleOverlayRenderer;
 import com.simibubi.create.content.equipment.goggles.GogglesItem;
 import com.tom.vivecraftcompat.VRMode;
+import com.tom.vivecraftcompat.simulated.SimulatedVRInputBridge;
 
 /**
  * Anchors the goggles readout to the block it describes instead of the HUD.
@@ -62,7 +63,9 @@ public class GoggleOverlayBillboard {
 			return;
 
 		Minecraft minecraft = Minecraft.getInstance();
-		BlockPos pos = GoggleOverlayRenderer.lastHovered;
+		BlockPos pos = SimulatedVRInputBridge.getActiveHoldInteractionPos();
+		if (pos == null)
+			pos = GoggleOverlayRenderer.lastHovered;
 		if (pos == null && minecraft.hitResult instanceof BlockHitResult blockHit)
 			pos = blockHit.getBlockPos();
 		if (pos == null)
@@ -81,6 +84,8 @@ public class GoggleOverlayBillboard {
 		// which is where Vivecraft parks the pointer with no screen open.
 		pose.translate(-graphics.guiWidth() / 2.0F, -graphics.guiHeight() / 2.0F, 0.0F);
 
+		BlockPos previousHovered = GoggleOverlayRenderer.lastHovered;
+		GoggleOverlayRenderer.lastHovered = pos;
 		drawing = true;
 		try {
 			GoggleOverlayRenderer.renderOverlay(graphics, event.getPartialTick());
@@ -88,6 +93,7 @@ public class GoggleOverlayBillboard {
 			// A readout must never break the frame.
 		} finally {
 			drawing = false;
+			GoggleOverlayRenderer.lastHovered = previousHovered;
 		}
 
 		pose.popPose();
