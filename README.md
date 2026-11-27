@@ -45,6 +45,8 @@ Currently supported mods:
   - Sublevel handle: seated interaction range and stick-driven extendo range.
   - Desktop input fix: typewriter keystrokes are no longer swallowed when VR is not
     running.
+  - Linked typewriter GUI: ESC and the VR menu button close the key-binding screen
+    (saves entries, releases the user). ESC is no longer swallowed while it is open.
   - Teleport towards physics structure problem.
 
  
