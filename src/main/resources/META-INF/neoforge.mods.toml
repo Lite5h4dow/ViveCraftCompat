@@ -27,14 +27,14 @@ displayURL="https://curseforge.com/minecraft/mc-mods/vivecraft-compat" #optional
 # A file name (in the root of the mod JAR) containing a logo for display
 logoFile="icon.png" #optional
 # A text field displayed in the mod UI
-credits="tom4545, glomzzz — original ViveCraftCompat; tom5454 — original author" #optional
+credits="tom5454, glomzzz — original ViveCraftCompat" #optional
 # A text field displayed in the mod UI
 authors="tom5454" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''
 A NeoForge 1.21.1 Vivecraft compatibility layer for Create, Create: Aeronautics / Simulated, Sable and common HUD mods. Hand-driven levers and wheels, VR-aware train/schematic/elevator/typewriter controls, and a hand/HMD overlay helper.
 
-Originally created by tom4545 and glomzzz; original author tom5454.
+Originally created by tom5454 and glomzzz.
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.vivecraftcompat]] #optional

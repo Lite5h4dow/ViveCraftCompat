@@ -2,7 +2,7 @@
 
 ViveCraft Compat is a NeoForge 1.21.1 compatibility layer that makes Vivecraft's VR controllers and hand tracking feel native in Create, Create: Aeronautics / Simulated, Sable, and the HUD mods around them. It keeps each mod's own assets, layouts and values; it replaces the input and camera-space assumptions that do not exist in VR.
 
-Originally created by **tom4545** and **glomzzz**; the first versions of ViveCraft Compat are theirs. The NeoForge 1.21.1 fork and the VR work here are maintained by **lotus / Lite5h4dow**.
+Originally created by **tom5454** and **glomzzz**; the first versions of ViveCraft Compat are theirs. The NeoForge 1.21.1 fork and the VR work here are maintained by **lotus / Lite5h4dow**.
 
 ## What it fixes
 
@@ -50,8 +50,7 @@ Optional: Create, Create: Aeronautics / Simulated + Sable, Jade, JourneyMap, The
 
 ## Credits
 
-- **tom4545** and **glomzzz** — original ViveCraft Compat and its first versions.
-- **tom5454** — original author and MIT copyright holder (see `LICENSE`).
+- **tom5454** and **glomzzz** — original ViveCraft Compat and its first versions; tom5454 is the original author and MIT copyright holder (see `LICENSE`).
 - **lotus / Lite5h4dow** — NeoForge 1.21.1 fork and the VR compatibility work.
 
 ## License
