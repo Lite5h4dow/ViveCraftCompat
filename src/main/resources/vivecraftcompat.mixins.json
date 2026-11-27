@@ -21,7 +21,6 @@
 	  "compat.create.CreateTrackBlockOutlineMixin",
 	  "compat.create.CreateRaycastHelperMixin",
 	  "compat.create.CreateValueSettingsScreenMixin",
-	  "compat.create.CreateGoggleOverlayRendererMixin",
 	  "compat.create.CreateContraptionControlsMovingInteractionMixin",
 
 	  "compat.simulated.SimulatedPhysicsStaffClientHandlerMixin",
@@ -32,7 +31,6 @@
 	  "compat.simulated.SimulatedUseOnContextMixin",
 	  "compat.simulated.SimulatedBlockPlaceContextMixin",
 	  "compat.simulated.SimulatedClientHandleHandlerMixin",
-	  "compat.simulated.SimulatedHoldInteractionManagerMixin",
 	  "compat.simulated.SimulatedSteeringWheelHandlerMixin",
 	  "compat.simulated.SimulatedSteeringWheelBlockMixin",
 	  "compat.simulated.SimulatedLinkedTypewriterBlockEntityMixin",

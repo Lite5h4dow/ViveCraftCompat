@@ -576,17 +576,6 @@ public class SimulatedVRInputBridge {
 		}
 	}
 
-	public static boolean isHoldInteractionActive() {
-		if (!isReflectionReady())
-			return false;
-		try {
-			return (boolean) holdInteractionActiveMethod.invoke(null);
-		} catch (ReflectiveOperationException | RuntimeException e) {
-			disableReflection("Failed to query Simulated hold interaction state", e);
-			return false;
-		}
-	}
-
 	private static boolean isThrottleLeverActive() {
 		return isBlockHoldInteractionActive(throttleLeverManager, "throttle lever");
 	}
@@ -599,38 +588,6 @@ public class SimulatedVRInputBridge {
 		return isBlockHoldInteractionActive(physicsAssemblerManager, "physics assembler");
 	}
 
-	/** True while a throttle lever grip is held by this player. */
-	public static boolean isThrottleLeverGripActive() {
-		return isUsable() && isThrottleLeverActive();
-	}
-
-	/**
-	 * The hold interaction Simulated is currently running, whichever one it is —
-	 * lever, wheel, assembler or handle. Simulated keeps it in a static field that
-	 * its own HUD renderer reads, so this is the same instance whose panel would
-	 * otherwise be drawn in the middle of the screen.
-	 *
-	 * @return the active interaction, or null when nothing is being held
-	 */
-	public static Object getActiveHoldInteraction() {
-		if (!isReflectionReady() || holdInteractionActiveField == null)
-			return null;
-
-		try {
-			return holdInteractionActiveField.get(null);
-		} catch (ReflectiveOperationException | RuntimeException e) {
-			// Losing the field costs the world-space panel, nothing else.
-			holdInteractionActiveField = null;
-			return null;
-		}
-	}
-
-	/** Block the active hold interaction is attached to, or null when idle. */
-	public static BlockPos getActiveHoldInteractionPos() {
-		Object active = getActiveHoldInteraction();
-		return active == null ? null : getInteractionPos(active);
-	}
-
 	private static boolean isHandleActive() {
 		return isBlockHoldInteractionActive(handleManager, "handle");
 	}
@@ -639,10 +596,6 @@ public class SimulatedVRInputBridge {
 		return isThrottleLeverActive() || isSteeringWheelActive() || isPhysicsAssemblerActive() || isHandleActive();
 	}
 
-	/**
-	 * Resolve a nullable manager field. Simulated renames these between releases;
-	 * losing one feature is tolerable, losing the whole bridge is not.
-	 */
 	private static Object optionalStaticField(Class<?> owner, String name) {
 		try {
 			return owner.getField(name).get(null);
