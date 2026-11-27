@@ -761,11 +761,15 @@ public class SimulatedVRInputBridge {
 		if (facing == null || attachFaceOf(state) != AttachFace.FLOOR)
 			return;
 
+		// Floor blockstate y rotations: north 0, east 90, south 180, west 270.
+		// The hand basis is built around the lever's forward direction. East and
+		// west use the matching 90/270 yaw; the old 270/90 mirrored the hand's
+		// forward/back on the X-axis floor mounts. North/south already matched.
 		double yaw = Math.toRadians(switch (facing) {
 			case SOUTH -> 0.0D;
-			case WEST -> 90.0D;
+			case WEST -> 270.0D;
 			case NORTH -> 180.0D;
-			default -> 270.0D; // EAST
+			default -> 90.0D; // EAST
 		});
 		double cos = Math.cos(yaw);
 		double sin = Math.sin(yaw);
